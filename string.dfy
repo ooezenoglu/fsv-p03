@@ -38,10 +38,21 @@ method arraycompare<E(==)>(a: array<E>, a_pos: nat,
                           length: nat)
   returns (eq: bool)
   // requires TODO: indices/length are in bounds
+  requires a_pos + length <= a.Length
+  requires b_pos + length <= b.Length
   // ensures  eq <==> TODO: the respective ranges are equal
+  ensures eq <==> a[a_pos..a_pos+length] == b[b_pos..b_pos+length]
 {
   // TODO: implement and verify using a loop with a (loop) invariant
-  return false;
+  var i := 0;
+  eq := a[a_pos..a_pos+i] == b[b_pos..b_pos+i];
+  while i < length
+    invariant 0 <= i <= length
+    invariant eq <==> a[a_pos..a_pos+i] == b[b_pos..b_pos+i]
+  {
+    if a[a_pos+i] != b[b_pos+i] { eq := false; }
+    i := i+1;  
+  }
 }
 
 class String {
