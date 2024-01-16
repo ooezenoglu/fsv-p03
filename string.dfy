@@ -67,69 +67,81 @@ class String {
   ghost predicate inv()
     reads this, chars
   {
-    true
     // TODO: start and end are valid
+    0 <= start <= end <= chars.Length &&
     // TODO: the respective range of chars equals the model variable content
+    content == chars[start..end]
   }
 
   constructor(chars: array<char>, start: int, end: int)
     // requires TODO: what are valid input parameters?
+    requires chars.Length > 0
+    requires 0 <= start <= end <= chars.Length
     // ensures  TODO: how content depends on the input parameters
+    ensures content == chars[start..end]
     ensures inv()
   {
     this.chars := chars;
     this.start := start;
     this.end   := end;
     // TODO: initialize this.content as well so that inv becomes and remains valid
+    this.content := chars[start..end];
   }
 
   method Length()
     returns (n: int)
     requires inv()
     // ensures TODO: specify result n in terms of the length of content, written |content|
+    ensures n == |content|
   {
     return end - start;
   }
 
   // Note: this helper lemma is needed so that Dafny can recognize some proofs
   lemma helper(at: int, k: int)
-  // TODO: remove comments from the lines below once inv is defined, it should verify then!
-  //   requires 0 <= at <= k <= end-start
-  //   requires inv()
-  //   ensures  content[at..k] == chars[start+at..start+k]
-  // {
-  //   if (at < k) { helper(at, k-1); }
-  // }
+    // TODO: remove comments from the lines below once inv is defined, it should verify then!
+    requires 0 <= at <= k <= end-start
+    requires inv()
+    ensures  content[at..k] == chars[start+at..start+k]
+  {
+    if (at < k) { helper(at, k-1); }
+  }
 
   method Substring(at: int, length: int)
     returns (result: String)
     requires inv()
-
     // TODO: at and length are in bounds wrt. |content|
-    // ensures result.inv() // TODO: 
-    // ensures result.content == TODO
+    requires 0 <= at <= length <= |content|
+    requires at + length <= |content|
+    requires chars.Length > 0
+    ensures result.inv() // TODO: 
+    ensures result.content == content[at..at+length]
   {
     helper(at, at+length); // just leave this here
 
     // TODO: change the two parameters start and end below
-    return new String(chars, 0, 0);
+    return new String(chars, start+at, start+at+length);
   }
 
   method Concat(that: String)
     returns (result: String)
     requires inv() && that.inv()
+    requires |this.content| + |that.content| > 0
     ensures result.inv()
     // ensures result.content == TODO
+    ensures result.content == this.content + that.content
   {
     var m := this.Length();
     var n := that.Length();
 
     // TODO: change these three lines
-    var newchars := new char[0];
+    var newchars := new char[n+m];
     var newstart := 0;
-    var newend   := 0;
+    var newend   := n+m;
 
     // TODO: call arraycopy twice here
+    arraycopy(chars, this.start, newchars, newstart, m);
+    arraycopy(that.chars, that.start, newchars, newstart+m, n);
     
     return new String(newchars, newstart, newend);
   }
@@ -138,19 +150,21 @@ class String {
     returns (result: bool)
     requires inv() && that.inv()
     // requires TODO: at is valid
+    requires 0 <= at <= |this.content|
     // ensures result <==> at + |that.content| <= |this.content| && TODO: the correct subrange of this.content equals that.content
+    ensures result <==> at + |that.content| <= |this.content| && this.chars[at..at+|that.content|] == that.chars[0..|that.content|]
   {
     var m := this.Length();
     var n := that.Length();
 
-    result := false; // TODO: remove this
-
-    // if TODO {
-    //   var eq := arraycompare(TODO);
-    //   helper(at, at+n);
-    //   return eq;
-    // } else {
-    //   return false;
-    // }
+    // result := false; // TODO: remove this
+    
+    if at + n <= m {
+      var eq := arraycompare(this.chars, at, that.chars, 0, n);
+      helper(at, at+n);
+      return eq;
+    } else {
+      return false;
+    }
   }
 }
