@@ -37,12 +37,23 @@ method arraycompare<E(==)>(a: array<E>, a_pos: nat,
                           b: array<E>, b_pos: nat,
                           length: nat)
   returns (eq: bool)
-  // requires TODO: indices/length are in bounds
-  // ensures  eq <==> TODO: the respective ranges are equal
+  requires a_pos + length <= a.Length && b_pos + length <= b.Length
+  ensures eq <==> forall i :: a_pos <= i < a_pos + length ==> a[i] == b[b_pos + i - a_pos]
 {
-  // TODO: implement and verify using a loop with a (loop) invariant
-  return false;
+  eq := true;
+  var i := 0;
+  while i < length
+    invariant 0 <= i <= length
+    invariant eq <==> forall j :: a_pos <= j < a_pos + i ==> a[j] == b[b_pos + j - a_pos]
+  {
+    if a[a_pos + i] != b[b_pos + i] {
+      eq := false;
+      break;
+    }
+    i := i + 1;
+  }
 }
+
 
 class String {
   // model variable
