@@ -117,44 +117,44 @@ class String {
   method Concat(that: String)
     returns (result: String)
     requires inv() && that.inv()
+    requires |this.content| + |that.content| > 0
     ensures result.inv()
+    // ensures result.content == TODO
     ensures result.content == this.content + that.content
   {
     var m := this.Length();
     var n := that.Length();
-    var newchars := new char[m + n];
-  
-    // Copy contents of this.chars to newchars
-    arraycopy(this.chars, start, newchars, 0, m);
-    assert newchars[0..m] == this.chars[start..start + m];
-  
-    // Copy contents of that.chars to newchars
-    arraycopy(that.chars, that.start, newchars, m, n);
-    assert newchars[m..m + n] == that.chars[that.start..that.start + n];
-  
-    // Construct the new String object
-    result := new String(newchars, 0, m + n);
-  
-    // Assert that result.content is the concatenation of this.content and that.content
-    assert result.content == newchars[0..m + n];
-    assert result.content == this.chars[start..start + m] + that.chars[that.start..that.start + n];
-    assert result.content == this.content + that.content;
-    return result;
+
+    // TODO: change these three lines
+    var newchars := new char[n+m];
+    var newstart := 0;
+    var newend   := n+m;
+
+    // TODO: call arraycopy twice here
+    arraycopy(chars, this.start, newchars, newstart, m);
+    arraycopy(that.chars, that.start, newchars, newstart+m, n);
+    
+    return new String(newchars, newstart, newend);
   }
   
   
   
   method ContainsAt(that: String, at: int)
     returns (result: bool)
-    requires inv() && that.inv() && 0 <= at && at <= |content|
-    ensures result <==> at + |that.content| <= |content| && content[at..at + |that.content|] == that.content
+    requires inv() && that.inv()
+    // requires TODO: at is valid
+    requires 0 <= at <= |this.content|
+    // ensures result <==> at + |that.content| <= |this.content| && TODO: the correct subrange of this.content equals that.content
+    ensures result <==> at + |that.content| <= |this.content| && this.chars[at..at+|that.content|] == that.chars[0..|that.content|]
   {
-    var thisLength := this.end - this.start;
-    var thatLength := that.end - that.start;
+    var m := this.Length();
+    var n := that.Length();
+
+    // result := false; // TODO: remove this
     
-    if at + thatLength <= thisLength {
-      var eq := arraycompare(chars, start + at, that.chars, that.start, thatLength);
-      helper(at, at + thatLength);
+    if at + n <= m {
+      var eq := arraycompare(this.chars, at, that.chars, 0, n);
+      helper(at, at+n);
       return eq;
     } else {
       return false;
