@@ -37,23 +37,23 @@ method arraycompare<E(==)>(a: array<E>, a_pos: nat,
                           b: array<E>, b_pos: nat,
                           length: nat)
   returns (eq: bool)
-  // requires TODO: indices/length are in bounds
-  requires a_pos + length <= a.Length
-  requires b_pos + length <= b.Length
-  // ensures  eq <==> TODO: the respective ranges are equal
-  ensures eq <==> a[a_pos..a_pos+length] == b[b_pos..b_pos+length]
+  requires a_pos + length <= a.Length && b_pos + length <= b.Length
+  ensures eq <==> forall i :: a_pos <= i < a_pos + length ==> a[i] == b[b_pos + i - a_pos]
 {
-  // TODO: implement and verify using a loop with a (loop) invariant
+  eq := true;
   var i := 0;
-  eq := a[a_pos..a_pos+i] == b[b_pos..b_pos+i];
   while i < length
     invariant 0 <= i <= length
-    invariant eq <==> a[a_pos..a_pos+i] == b[b_pos..b_pos+i]
+    invariant eq <==> forall j :: a_pos <= j < a_pos + i ==> a[j] == b[b_pos + j - a_pos]
   {
-    if a[a_pos+i] != b[b_pos+i] { eq := false; }
-    i := i+1;  
+    if a[a_pos + i] != b[b_pos + i] {
+      eq := false;
+      break;
+    }
+    i := i + 1;
   }
 }
+
 
 class String {
   // model variable
@@ -67,62 +67,53 @@ class String {
   ghost predicate inv()
     reads this, chars
   {
-    // TODO: start and end are valid
-    0 <= start <= end <= chars.Length &&
-    // TODO: the respective range of chars equals the model variable content
+    0 <= start && start <= end && end <= chars.Length &&
     content == chars[start..end]
   }
-
+  
+  
   constructor(chars: array<char>, start: int, end: int)
-    // requires TODO: what are valid input parameters?
-    requires chars.Length > 0
-    requires 0 <= start <= end <= chars.Length
-    // ensures  TODO: how content depends on the input parameters
+    requires 0 <= start && start <= end && end <= chars.Length
     ensures content == chars[start..end]
     ensures inv()
   {
     this.chars := chars;
     this.start := start;
     this.end   := end;
-    // TODO: initialize this.content as well so that inv becomes and remains valid
     this.content := chars[start..end];
   }
-
+  
+  
   method Length()
     returns (n: int)
     requires inv()
-    // ensures TODO: specify result n in terms of the length of content, written |content|
     ensures n == |content|
   {
     return end - start;
   }
-
-  // Note: this helper lemma is needed so that Dafny can recognize some proofs
+  
+  
   lemma helper(at: int, k: int)
-    // TODO: remove comments from the lines below once inv is defined, it should verify then!
-    requires 0 <= at <= k <= end-start
+    requires 0 <= at <= k <= end - start
     requires inv()
-    ensures  content[at..k] == chars[start+at..start+k]
+    ensures content[at..k] == chars[start + at..start + k]
   {
-    if (at < k) { helper(at, k-1); }
+    if (at < k) { helper(at, k - 1); }
   }
-
+  
   method Substring(at: int, length: int)
     returns (result: String)
     requires inv()
-    // TODO: at and length are in bounds wrt. |content|
-    requires 0 <= at <= length <= |content|
-    requires at + length <= |content|
-    requires chars.Length > 0
-    ensures result.inv() // TODO: 
-    ensures result.content == content[at..at+length]
+    requires 0 <= at && at <= |content|  
+    requires 0 <= length && at + length <= |content|  
+    ensures result.inv()
+    ensures result.content == content[at..at + length]
   {
-    helper(at, at+length); // just leave this here
-
-    // TODO: change the two parameters start and end below
-    return new String(chars, start+at, start+at+length);
+    helper(at, at + length);
+    return new String(chars, start + at, start + at + length);
   }
-
+  
+  
   method Concat(that: String)
     returns (result: String)
     requires inv() && that.inv()
@@ -145,7 +136,9 @@ class String {
     
     return new String(newchars, newstart, newend);
   }
-
+  
+  
+  
   method ContainsAt(that: String, at: int)
     returns (result: bool)
     requires inv() && that.inv()
@@ -167,4 +160,5 @@ class String {
       return false;
     }
   }
+  
 }
